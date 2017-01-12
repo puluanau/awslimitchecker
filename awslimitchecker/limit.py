@@ -219,6 +219,21 @@ class AwsLimit(object):
         """
         return self._current_usage
 
+    def get_dot_usage_str(self):
+        """
+        Get the current usage for this limit.  Returns either a single number, or 
+        an array of key/value pairs."""
+        if len(self._current_usage) == 0:
+            return None
+        if len(self._current_usage) == 1:
+            return str(self._current_usage[0])
+        # otherwise, it's the array of all the values...
+        myfun=[]
+        for x in self._current_usage:
+            # myfun.append([self.resource_id,self.value])
+            myfun.append(str(x))
+        return myfun
+
     def get_current_usage_str(self):
         """
         Get the a string describing the current usage for this limit.

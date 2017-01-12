@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import sys
+import re
 import argparse
 import logging
 import json
@@ -116,6 +117,10 @@ class Runner(object):
                        help='override a single AWS limit, specified in '
                        '"service_name/limit_name=value" format; can be '
                        'specified multiple times.')
+        p.add_argument('-U', '--dot-usage', action='store_true',
+                       default=False,
+                       help='find and print current usage for all services '
+                       'presented a dot format')
         p.add_argument('-u', '--show-usage', action='store_true',
                        default=False,
                        help='find and print the current usage of all AWS '
@@ -206,6 +211,27 @@ class Runner(object):
     def iam_policy(self):
         policy = self.checker.get_required_iam_policy()
         print(json.dumps(policy, sort_keys=True, indent=2))
+
+    def dot_usage(self):
+        self.checker.find_usage(
+            service=self.service_name, use_ta=(not self.skip_ta))
+        limits = self.checker.get_limits(
+            service=self.service_name, use_ta=(not self.skip_ta))
+        for svc in sorted(limits.keys()):
+            for lim in sorted(limits[svc].keys()):
+                prefix=re.sub("(default=|[\(\)])","","{s}.{l}".format(s=svc, l=lim).lower().replace(" ","_"))
+                mylim=limits[svc][lim].get_dot_usage_str()
+                if mylim:
+                  #print prefix,mylim
+                  if isinstance(mylim,str):
+                    print "{p}={l}".format(p=prefix,l=re.sub("(default=|[\(\)])","",mylim.strip()))
+                  elif isinstance(mylim,list):
+                    mylim=set(mylim)
+                    for i in mylim:
+                      if re.search("[=]",i):
+                        print "{p}.{r[0]}={r[1]}".format(p=prefix,r=i.split("="))
+                      else:
+                        print "{p}={l}".format(p=prefix,l=i.strip())
 
     def show_usage(self):
         self.checker.find_usage(
@@ -349,6 +375,10 @@ class Runner(object):
 
         if args.iam_policy:
             self.iam_policy()
+            raise SystemExit(0)
+
+        if args.dot_usage:
+            self.dot_usage()
             raise SystemExit(0)
 
         if args.show_usage:

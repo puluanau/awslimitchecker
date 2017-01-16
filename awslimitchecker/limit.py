@@ -49,6 +49,7 @@ SOURCE_TA = 2
 #: indicates a limit value that came from the service's API
 SOURCE_API = 3
 
+import re
 
 class AwsLimit(object):
 
@@ -226,7 +227,11 @@ class AwsLimit(object):
         if len(self._current_usage) == 0:
             return None
         if len(self._current_usage) == 1:
-            return str(self._current_usage[0])
+            # there's a bug here.  workaround instead of fix.
+            if re.search('[=]',str(self._current_usage[0])):
+                return [str(self._current_usage[0])]
+            else:
+                return str(self._current_usage[0])
         # otherwise, it's the array of all the values...
         myfun=[]
         for x in self._current_usage:
